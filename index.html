@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23130e26'/%3E%3Ctext x='16' y='23' font-size='17' text-anchor='middle' fill='%23e9cd91'%3E%E2%9D%96%3C/text%3E%3C/svg%3E" />
+<title>五牌密码 · Five-Card Code</title>
+<style>
+/* ==========================================================================
+   五牌密码 — 单文件网页游戏
+   配色：深紫夜空 + 香槟金；字体：衬线标题 + 无衬线正文
+   ========================================================================== */
+:root{
+  --bg-0:#07060d;
+  --bg-1:#120e20;
+  --bg-2:#1b1430;
+  --ink:#f4efe4;
+  --ink-dim:#c3b9cf;
+  --muted:#9187a6;
+  --gold:#e9cd91;
+  --gold-2:#c9a45c;
+  --gold-deep:#8a6d33;
+  --red:#d9485f;
+  --green:#5fd0a0;
+  --line:rgba(233,205,145,.16);
+  --panel:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
+  --radius:18px;
+  --serif:"Source Han Serif SC","Noto Serif SC","Songti SC",STSong,SimSun,Georgia,"Times New Roman",serif;
+  --sans:"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  min-height:100dvh;
+  background:
+    radial-gradient(900px 520px at 50% -8%, rgba(122,86,190,.28), transparent 62%),
+    radial-gradient(700px 500px at 92% 8%, rgba(217,72,95,.10), transparent 60%),
+    radial-gradient(800px 600px at 4% 92%, rgba(90,140,220,.10), transparent 60%),
+    linear-gradient(180deg,var(--bg-1) 0%, var(--bg-0) 58%, #050409 100%);
+  color:var(--ink);
+  font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;
+  letter-spacing:.01em;
+  overflow-x:hidden;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+  background-image:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.022) 0 1px,transparent 1px 3px),
+    radial-gradient(1200px 800px at 50% 40%, transparent 55%, rgba(0,0,0,.55) 100%);
+  mix-blend-mode:overlay;
+}
+button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:0;cursor:pointer}
+h1,h2,h3,h4{font-family:var(--serif);font-weight:600;margin:0;letter-spacing:.02em}
+p{margin:0}
+::selection{background:rgba(233,205,145,.3)}
+
+/* ---------- 布局骨架 ---------- */
+.shell{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:22px 22px 56px}
+.topbar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding-bottom:20px}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto}
+.seal{
+  width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  font-size:19px;color:var(--gold);
+  background:linear-gradient(160deg,rgba(233,205,145,.22),rgba(233,205,145,.04));
+  border:1px solid rgba(233,205,145,.35);
+  box-shadow:0 0 26px -8px rgba(233,205,145,.55), inset 0 1px 0 rgba(255,255,255,.18);
+}
+.brand h1{font-size:20px;line-height:1.1;letter-spacing:.14em}
+.brand span{display:block;font-size:9.5px;letter-spacing:.32em;color:var(--muted);margin-top:3px}
+.tabs{display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:8px 15px;border-radius:999px;font-size:13px;color:var(--ink-dim);white-space:nowrap;transition:.22s}
+.tab:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+.tab.on{color:#241a06;background:linear-gradient(180deg,#f1daa2,#c9a45c);font-weight:700;box-shadow:0 6px 18px -10px rgba(233,205,145,.9)}
+
+/* ---------- 按钮 ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 22px;border-radius:12px;font-size:14.5px;font-weight:600;
+  transition:transform .16s, box-shadow .22s, background .22s, color .22s;
+  border:1px solid transparent;
+}
+.btn:active{transform:translateY(1px) scale(.99)}
+.btn.primary{background:linear-gradient(180deg,#f3dda8,#c9a45c);color:#2a1e06;box-shadow:0 14px 30px -16px rgba(233,205,145,.95), inset 0 1px 0 rgba(255,255,255,.5)}
+.btn.primary:hover{box-shadow:0 18px 38px -16px rgba(233,205,145,1), inset 0 1px 0 rgba(255,255,255,.6)}
+.btn.ghost{background:rgba(255,255,255,.045);border-color:rgba(233,205,145,.22);color:#e9e1d0}
+.btn.ghost:hover{background:rgba(233,205,145,.12);border-color:rgba(233,205,145,.42)}
+.btn.tiny{padding:7px 13px;font-size:12.5px;border-radius:9px}
+.btn.wide{width:100%}
+.btn[disabled]{opacity:.35;cursor:not-allowed;box-shadow:none;transform:none}
+.btn.primary[disabled]{filter:grayscale(.4)}
+
+/* ---------- 屏幕切换 ---------- */
+.screen{display:none;animation:screenIn .45s cubic-bezier(.2,.7,.2,1)}
+.screen.active{display:block}
+@keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ---------- 首页 ---------- */
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:26px;align-items:center;padding:26px 0 30px}
+.kicker{font-size:11.5px;letter-spacing:.3em;color:var(--gold-2);text-transform:uppercase;margin-bottom:16px}
+.hero h2{font-size:clamp(30px,4.4vw,50px);line-height:1.16;letter-spacing:.03em}
+.hero h2 em{
+  font-style:normal;position:relative;
+  background:linear-gradient(180deg,#fff3d5,#d8b069 60%,#a9813c);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.lede{margin-top:18px;font-size:14.5px;line-height:2;color:var(--ink-dim);max-width:58ch}
+.cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.hero-art{display:grid;place-items:center}
+.fan{position:relative;width:250px;height:180px}
+.fan .card{position:absolute;left:50%;top:22px;margin-left:-40px;transition:transform .5s cubic-bezier(.2,.8,.3,1)}
+.fan .card:nth-child(1){z-index:1}
+.fan .card:nth-child(2){z-index:2}
+.fan .card:nth-child(3){z-index:3}
+.fan .card:nth-child(4){z-index:5}
+.fan .card:nth-child(5){z-index:4}
+.fan:hover .card:nth-child(3){transform:rotate(-2deg) translate(0,-12px) scale(1.04)!important}
+
+.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:10px}
+.mode{
+  text-align:left;padding:22px 20px;border-radius:var(--radius);
+  background:var(--panel);border:1px solid rgba(255,255,255,.07);
+  transition:.25s;position:relative;overflow:hidden;
+}
+.mode::after{content:"";position:absolute;inset:0;background:radial-gradient(320px 160px at 20% 0%,rgba(233,205,145,.12),transparent 70%);opacity:0;transition:.3s}
+.mode:hover{transform:translateY(-4px);border-color:rgba(233,205,145,.34)}
+.mode:hover::after{opacity:1}
+.mode-no{font-family:var(--serif);font-size:13px;color:var(--gold);letter-spacing:.2em}
+.mode h3{font-size:17.5px;margin:10px 0 8px}
+.mode p{font-size:13px;line-height:1.8;color:var(--muted)}
+.mode-link{display:inline-block;margin-top:14px;font-size:12.5px;color:var(--gold);letter-spacing:.06em}
+.stat-strip{
+  margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;
+  padding:14px 18px;border-radius:14px;background:rgba(255,255,255,.028);
+  border:1px solid rgba(255,255,255,.055);font-size:12.5px;color:var(--muted)
+}
+.stat-strip b{color:var(--ink);font-weight:700}
+.stat-strip .dot{color:rgba(255,255,255,.18)}
+.stat-tools{margin-left:auto;display:inline-flex;align-items:center;gap:10px}
+.stat-note{font-size:11px;color:#6f6684;letter-spacing:.04em}
+.btn.danger{background:rgba(217,72,95,.15);border-color:rgba(217,72,95,.55);color:#ff9caa}
+.btn.danger:hover{background:rgba(217,72,95,.24);border-color:rgba(217,72,95,.8)}
+
+/* ---------- 面板 ---------- */
+.game-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:18px;align-items:start}
+.panel{background:var(--panel);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden}
+.panel::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,rgba(233,205,145,.4),transparent)}
+.panel-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.panel-head h2{font-size:19px}
+.panel-head h3{font-size:15px;letter-spacing:.06em}
+.tagline{font-size:11.5px;color:var(--muted);margin-left:auto;letter-spacing:.04em}
+.scoreline{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-bottom:16px}
+.scoreline b{color:var(--gold);font-weight:700}
+.felt{
+  border-radius:14px;padding:18px 14px 20px;
+  background:
+    radial-gradient(420px 220px at 50% 0%,rgba(233,205,145,.07),transparent 72%),
+    linear-gradient(180deg,rgba(0,0,0,.24),rgba(0,0,0,.1));
+  border:1px solid rgba(255,255,255,.05);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.felt-label{font-size:11px;letter-spacing:.2em;color:var(--muted);margin-bottom:10px}
+.felt-label + .felt-label{margin-top:20px}
+.felt > .row + .felt-label{margin-top:18px}
+
+/* ---------- 纸牌 ---------- */
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.row.cards{--cw:80px;--ch:114px}
+.card{
+  position:relative;width:var(--cw,76px);height:var(--ch,108px);flex:none;
+  border-radius:calc(var(--cw,76px) * .125);
+  background:linear-gradient(158deg,#fffefb 0%,#f9f3e6 52%,#eae0cd 100%);
+  color:#191721;
+  box-shadow:
+    0 16px 28px -16px rgba(0,0,0,.9),
+    0 1px 0 rgba(255,255,255,.9) inset,
+    0 0 0 1px rgba(255,255,255,.55);
+  display:grid;place-items:center;
+  font-family:Georgia,"Times New Roman",var(--serif);
+  user-select:none;
+  transition:transform .22s cubic-bezier(.2,.8,.3,1), box-shadow .22s, opacity .22s;
+}
+.card.red{color:#c62f4b}
+.card .c{
+  position:absolute;display:flex;flex-direction:column;align-items:center;gap:1px;
+  font-size:calc(var(--cw,76px) * .215);line-height:1;font-weight:700;letter-spacing:-.02em;
+}
+.card .c b.ten{font-size:.8em;letter-spacing:-.08em}
+.card .c i{font-style:normal;font-size:calc(var(--cw,76px) * .185);line-height:1}
+.card .c.tl{top:calc(var(--cw,76px) * .085);left:calc(var(--cw,76px) * .095)}
+.card .c.br{bottom:calc(var(--cw,76px) * .085);right:calc(var(--cw,76px) * .095);transform:rotate(180deg)}
+.card .pip{font-size:calc(var(--cw,76px) * .46);opacity:.9;line-height:1;transform:translateY(2px)}
+.card.deal{animation:dealIn .55s cubic-bezier(.18,.85,.28,1.05) both}
+@keyframes dealIn{
+  from{opacity:0;transform:translate(18px,-26px) rotate(9deg) scale(.86)}
+  to{opacity:1;transform:none}
+}
+.card.lead{box-shadow:0 16px 28px -16px rgba(0,0,0,.9), 0 0 0 2px rgba(233,205,145,.75), 0 0 30px -6px rgba(233,205,145,.5)}
+.card.clickable{cursor:pointer}
+.card.clickable:hover{transform:translateY(-9px) rotate(-1deg);box-shadow:0 26px 34px -18px rgba(0,0,0,1), 0 0 0 1px rgba(233,205,145,.5)}
+.card.placed{opacity:.25;filter:saturate(.4);transform:scale(.94)}
+.card.true{box-shadow:0 0 0 3px var(--green), 0 0 34px -6px rgba(95,208,160,.75)}
+
+/* 牌背 */
+.card.back-face{
+  background:
+    radial-gradient(circle at 50% 42%,rgba(233,205,145,.17),transparent 60%),
+    linear-gradient(158deg,#2c2249 0%,#1b1434 56%,#120d26 100%);
+  color:var(--gold);
+  box-shadow:
+    0 16px 28px -16px rgba(0,0,0,.95),
+    0 0 0 1px rgba(233,205,145,.42),
+    inset 0 0 0 4px rgba(9,7,17,.6),
+    inset 0 0 0 5px rgba(233,205,145,.22);
+}
+.card.back-face::before{
+  content:"";position:absolute;inset:10px;border-radius:5px;
+  background-image:
+    repeating-linear-gradient(45deg,rgba(233,205,145,.085) 0 1px,transparent 1px 7px),
+    repeating-linear-gradient(-45deg,rgba(233,205,145,.085) 0 1px,transparent 1px 7px);
+}
+.card.back-face::after{
+  content:"❖";font-size:calc(var(--cw,76px) * .3);opacity:.85;position:relative;
+  text-shadow:0 0 22px rgba(233,205,145,.65);
+}
+.card .badge{position:absolute;top:-8px;left:-8px;width:21px;height:21px;border-radius:50%;
+  background:linear-gradient(180deg,#f3dda8,#c9a45c);color:#2a1e06;
+  font:700 11px/21px var(--sans);text-align:center;letter-spacing:0;z-index:3;
+  box-shadow:0 4px 10px -4px rgba(0,0,0,.8);}
+.card .badge.green{background:linear-gradient(180deg,#95f0c8,#4cb98c);color:#06281b}
+
+/* 翻牌 */
+.flip{width:var(--cw,80px);height:var(--ch,114px);perspective:900px;--cw:80px;--ch:114px}
+.flip .inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.3,.75,.25,1)}
+.flip.on .inner{transform:rotateY(180deg)}
+.flip .side{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.flip .side .card{width:100%;height:100%}
+.flip .side.front{transform:rotateY(180deg)}
+
+/* ---------- 选牌器 ---------- */
+.pick-label{font-size:11px;letter-spacing:.2em;color:var(--muted);margin:16px 0 8px}
+.pick-row{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.pick-row.ranks{grid-template-columns:repeat(7,1fr)}
+.pick{
+  padding:9px 0;border-radius:9px;font-size:14px;font-weight:600;
+  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);
+  color:var(--ink-dim);transition:.15s;
+}
+.pick.rk{font-family:Georgia,var(--serif)}
+.pick:hover{background:rgba(233,205,145,.12);color:var(--ink)}
+.pick.on{background:linear-gradient(180deg,#f3dda8,#c9a45c);color:#2a1e06;border-color:#f3dda8;box-shadow:0 8px 18px -10px rgba(233,205,145,.9)}
+.pick.red-pick{color:#ff8fa0}
+.pick.on.red-pick{color:#6b0d1d}
+.guess-now{font-size:13px;color:var(--muted);margin:14px 0 12px;min-height:20px}
+.guess-now b{color:var(--gold);font-size:15px;letter-spacing:.06em}
+
+/* ---------- 反馈 / 解析 ---------- */
+.feedback{margin-top:16px}
+.verdict{display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:700;padding:11px 14px;border-radius:11px;margin-bottom:12px}
+.verdict.ok{color:#8ef0c3;background:rgba(95,208,160,.1);border:1px solid rgba(95,208,160,.28)}
+.verdict.bad{color:#ff9caa;background:rgba(217,72,95,.1);border:1px solid rgba(217,72,95,.28)}
+.explain{font-size:13px;line-height:1.95;color:var(--ink-dim)}
+.explain ol{margin:0;padding-left:18px}
+.explain li{margin-bottom:7px}
+.explain b{color:var(--ink)}
+.chip{
+  display:inline-flex;align-items:center;padding:1px 7px;margin:0 2px;border-radius:6px;
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);
+  font-family:Georgia,var(--serif);font-weight:700;font-size:.95em;color:#f7f2e6;
+}
+.chip.red{color:#ff97a8;border-color:rgba(255,151,168,.3);background:rgba(217,72,95,.14)}
+.chip.gold{background:rgba(233,205,145,.14);border-color:rgba(233,205,145,.35);color:var(--gold)}
+.hintline{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.8}
+.hintline em{font-style:normal;color:var(--gold)}
+.kbd{
+  display:inline-block;padding:1px 6px;border-radius:5px;font-size:11.5px;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:var(--ink-dim);
+}
+
+/* ---------- 助手模式 ---------- */
+.row.slots{--cw:66px;--ch:94px;gap:9px}
+.slot{
+  width:var(--cw,66px);height:var(--ch,94px);flex:none;border-radius:11px;
+  border:1px dashed rgba(233,205,145,.32);
+  display:grid;place-items:center;color:#6b6180;font-size:12px;
+  background:rgba(255,255,255,.015);letter-spacing:.1em;
+  transition:.2s;
+}
+.slot:hover{border-color:rgba(233,205,145,.6);color:var(--gold)}
+.row.actions{gap:8px;margin-top:18px}
+.magician-bubble{
+  font-size:13px;line-height:2;color:var(--ink-dim);
+  padding:16px;border-radius:12px;background:rgba(0,0,0,.22);
+  border:1px solid rgba(255,255,255,.06);min-height:96px;
+}
+.magician-bubble .quote{color:var(--gold);font-family:var(--serif);font-size:12px;letter-spacing:.2em;display:block;margin-bottom:8px}
+.selfcheck{font-size:12px;line-height:1.9;color:var(--muted);margin-top:12px}
+.selfcheck .yes{color:var(--green)}
+.selfcheck .no{color:#ff9caa}
+
+/* ---------- 手册 ---------- */
+.guide-wrap{display:grid;gap:16px}
+.g-card{background:var(--panel);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius);padding:22px}
+.g-card h3{font-size:16px;margin-bottom:12px;color:var(--gold);letter-spacing:.06em}
+.g-card p,.g-card li{font-size:13.5px;line-height:2;color:var(--ink-dim)}
+.g-card ol,.g-card ul{margin:0;padding-left:20px}
+.g-card b{color:var(--ink)}
+.rule-list{display:grid;gap:12px;grid-template-columns:repeat(3,1fr)}
+.rule{padding:16px;border-radius:12px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06)}
+.rule .n{font-family:var(--serif);color:var(--gold-2);font-size:12px;letter-spacing:.24em}
+.rule h4{font-size:14.5px;margin:8px 0 8px}
+.rule p{font-size:12.5px;line-height:1.85;color:var(--muted)}
+.perm-list{display:grid;gap:8px}
+.perm-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.05)}
+.perm-row .num{font-family:Georgia,var(--serif);font-size:16px;color:var(--gold);width:24px;text-align:center;font-weight:700}
+.tag{
+  display:inline-grid;place-items:center;width:30px;height:38px;border-radius:5px;
+  background:linear-gradient(160deg,#fffdf8,#eee6d4);color:#1a1822;
+  font-family:var(--serif);font-size:12px;font-weight:700;
+  box-shadow:0 4px 9px -5px rgba(0,0,0,.8);
+}
+.perm-row .arrow{margin-left:auto;font-size:12px;color:var(--muted)}
+.perm-row .arrow b{color:var(--ink)}
+.example{display:grid;gap:12px}
+.timeline{display:grid;gap:10px;padding-left:16px;border-left:1px solid rgba(233,205,145,.25)}
+.timeline .step{position:relative;font-size:13px;line-height:1.9;color:var(--ink-dim)}
+.timeline .step::before{content:"";position:absolute;left:-21px;top:8px;width:8px;height:8px;border-radius:50%;background:var(--gold-2);box-shadow:0 0 0 3px rgba(233,205,145,.14)}
+.timeline .step b{color:var(--ink)}
+
+/* ---------- 对照表抽屉 ---------- */
+.sheet{
+  position:fixed;top:0;right:0;height:100%;width:min(400px,92vw);z-index:60;
+  background:linear-gradient(180deg,#171029,#0d0918);
+  border-left:1px solid rgba(233,205,145,.22);
+  padding:22px;overflow-y:auto;transform:translateX(103%);
+  transition:transform .38s cubic-bezier(.3,.8,.25,1);
+  box-shadow:-30px 0 70px -30px rgba(0,0,0,.9);
+}
+body.sheet-open .sheet{transform:none}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sheet-head h3{font-size:16px;color:var(--gold)}
+.sheet-note{font-size:12px;color:var(--muted);line-height:1.9;margin:10px 0 14px}
+.scrim{position:fixed;inset:0;z-index:55;background:rgba(4,3,10,.66);opacity:0;pointer-events:none;transition:.35s;backdrop-filter:blur(2px)}
+body.sheet-open .scrim{opacity:1;pointer-events:auto}
+
+/* ---------- 页脚 ---------- */
+.foot{margin-top:34px;padding-top:18px;border-top:1px solid rgba(255,255,255,.06);font-size:11.5px;color:#6f6684;line-height:2}
+.foot a{color:var(--gold-2);text-decoration:none;border-bottom:1px dotted rgba(233,205,145,.4)}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr;gap:10px;padding-bottom:22px}
+  .hero-art{order:-1;transform:scale(.8);height:150px}
+  .game-grid{grid-template-columns:1fr}
+  .mode-grid{grid-template-columns:1fr}
+  .rule-list{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .shell{padding:16px 14px 44px}
+  .topbar{gap:10px}
+  .brand h1{font-size:17px}
+  .tabs{order:3;width:100%}
+  .hero-art{transform:scale(.66);height:120px;margin-bottom:-6px}
+  .row.cards{--cw:clamp(52px,13.2vw,66px);--ch:calc(var(--cw) * 1.43);gap:clamp(5px,1.6vw,8px)}
+  .flip{--cw:clamp(52px,13.2vw,66px);--ch:calc(var(--cw) * 1.43)}
+  .row.slots{--cw:clamp(48px,12.4vw,62px);--ch:calc(var(--cw) * 1.43);gap:clamp(5px,1.6vw,8px)}
+  .panel{padding:15px}
+  .felt{padding:14px 11px 16px}
+  .card .badge{width:18px;height:18px;font-size:9.5px;line-height:18px;top:-6px;left:-6px}
+  .hero h2{font-size:30px}
+  .pick-row.ranks{grid-template-columns:repeat(5,1fr)}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:50}
+</style>
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="seal">❖</div>
+      <div>
+        <h1>五牌密码</h1>
+        <span>FIVE-CARD CODE</span>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs" aria-label="主导航">
+      <button class="tab" data-screen="home">首页</button>
+      <button class="tab" data-screen="magician">当魔术师</button>
+      <button class="tab" data-screen="assistant">当助手</button>
+      <button class="tab" data-screen="guide">解密手册</button>
+    </nav>
+    <button class="btn tiny ghost" id="btnSheet">对照表</button>
+  </header>
+
+  <main>
+    <!-- ===================== 首页 ===================== -->
+    <section class="screen active" id="screen-home">
+      <div class="hero">
+        <div>
+          <p class="kicker">数学魔术 · 零手法 · 100% 命中</p>
+          <h2>四张明牌，<em>一张</em>心事</h2>
+          <p class="lede">观众抽五张牌，助手挑出四张按顺序摆好，魔术师只看一眼，就能说出扣着的那张。没有托，没有记号——只有鸽巢原理，和 3! = 6 种排列。</p>
+          <div class="cta">
+            <button class="btn primary" data-go="magician">我当魔术师</button>
+            <button class="btn ghost" data-go="assistant">我当助手</button>
+            <button class="btn ghost" data-go="guide">先看原理</button>
+          </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="fan">
+            <div class="card back-face" style="transform:rotate(-18deg) translate(-60px,18px) scale(.88);z-index:1"></div>
+            <div class="card back-face" style="transform:rotate(-9deg) translate(-30px,6px) scale(.94);z-index:2"></div>
+            <div class="card red" style="transform:rotate(0deg) translate(0,0);z-index:5">
+              <span class="c tl"><b>?</b><i>♥</i></span><span class="pip">♥</span>
+              <span class="c br"><b>?</b><i>♥</i></span>
+            </div>
+            <div class="card back-face" style="transform:rotate(9deg) translate(30px,6px) scale(.94);z-index:3"></div>
+            <div class="card back-face" style="transform:rotate(18deg) translate(60px,18px) scale(.88);z-index:2"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mode-grid">
+        <button class="mode" data-go="magician">
+          <span class="mode-no">Ⅰ · READ</span>
+          <h3>当魔术师</h3>
+          <p>只看助手摆出的四张牌，说出扣着的第五张。新手模式会给你花色与数字的提示。</p>
+          <span class="mode-link">开始读心 →</span>
+        </button>
+        <button class="mode" data-go="assistant">
+          <span class="mode-no">Ⅱ · ENCODE</span>
+          <h3>当助手</h3>
+          <p>反过来：你来决定藏哪张、按什么顺序亮牌。看魔术师能不能读懂你的密码。</p>
+          <span class="mode-link">设计密码 →</span>
+        </button>
+        <button class="mode" data-go="guide">
+          <span class="mode-no">Ⅲ · DECODE</span>
+          <h3>解密手册</h3>
+          <p>三条规则、六种排列的对照表、一个逐步拆解的例子。看懂之后，你也能上台。</p>
+          <span class="mode-link">拆开看看 →</span>
+        </button>
+      </div>
+
+      <div class="stat-strip" id="homeStats"></div>
+    </section>
+
+    <!-- ===================== 当魔术师 ===================== -->
+    <section class="screen" id="screen-magician">
+      <div class="game-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>当魔术师</h2>
+            <label class="tagline" for="beginnerToggle" style="cursor:pointer;display:flex;align-items:center;gap:7px;margin-left:auto">
+              <input type="checkbox" id="beginnerToggle" style="accent-color:#c9a45c;width:14px;height:14px;cursor:pointer" />
+              新手提示
+            </label>
+          </div>
+          <div class="scoreline" id="mScore"></div>
+          <div class="felt">
+            <div class="felt-label">助手亮出的四张</div>
+            <div class="row cards" id="mShown"></div>
+            <div class="hintline" id="mLegend"></div>
+            <div class="felt-label">扣着的第五张</div>
+            <div class="flip" id="mFlip"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>你的读心</h3>
+            <button class="btn tiny ghost" id="mNew" style="margin-left:auto">换一局</button>
+          </div>
+          <div class="pick-label">花色</div>
+          <div class="pick-row" id="mSuits"></div>
+          <div class="pick-label">点数</div>
+          <div class="pick-row ranks" id="mRanks"></div>
+          <div class="guess-now" id="mGuessNow"></div>
+          <button class="btn primary wide" id="mSubmit" disabled>揭晓答案</button>
+          <div class="feedback" id="mFeedback"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 当助手 ===================== -->
+    <section class="screen" id="screen-assistant">
+      <div class="game-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>当助手</h2>
+            <span class="tagline">设计一套只有魔术师能读懂的密码</span>
+          </div>
+          <div class="felt">
+            <div class="felt-label">手牌 · 点一张把它藏起来</div>
+            <div class="row cards" id="aHand"></div>
+            <div class="felt-label">亮牌顺序 · 依次点击放置，点已放置的牌可取回</div>
+            <div class="row slots" id="aSlots"></div>
+          </div>
+          <div class="row actions">
+            <button class="btn tiny ghost" id="aUndo">撤销一张</button>
+            <button class="btn tiny ghost" id="aReset">重来</button>
+            <button class="btn tiny ghost" id="aDemo">看示范</button>
+            <button class="btn tiny primary" id="aNew" style="margin-left:auto">换一局</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>魔术师</h3>
+            <span class="tagline" id="aState"></span>
+          </div>
+          <div class="magician-bubble" id="aBubble"></div>
+          <div class="feedback" id="aFeedback"></div>
+          <button class="btn primary wide" id="aConfirm" disabled style="margin-top:16px">让他读读看</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 解密手册 ===================== -->
+    <section class="screen" id="screen-guide">
+      <div class="guide-wrap">
+        <div class="g-card">
+          <h3>一句话版本</h3>
+          <p>把 5 张牌看成 5 份信息，用其中 4 张牌排出 4! 种顺序，再借“花色”和“环上的距离”做两次压缩，刚好把第 5 张牌完整地说出去。</p>
+        </div>
+
+        <div class="g-card">
+          <h3>三条规则</h3>
+          <div class="rule-list">
+            <div class="rule">
+              <span class="n">RULE 01</span>
+              <h4>第一张牌定花色</h4>
+              <p>5 张牌只有 4 种花色，必有至少两张同花色（鸽巢原理）。助手把其中一张放在第一位，魔术师就知道藏牌的花色了。</p>
+            </div>
+            <div class="rule">
+              <span class="n">RULE 02</span>
+              <h4>环形距离不超过 6</h4>
+              <p>把 A~K 围成一个圈。同花色的两张牌，总有一个方向的距离 ≤ 6。助手藏起“在前一张往前 1~6 步”的那张，第一张便同时是计数的起点。</p>
+            </div>
+            <div class="rule">
+              <span class="n">RULE 03</span>
+              <h4>三个排列 = 1~6</h4>
+              <p>剩下 3 张牌有 3! = 6 种排法，正好对应数字 1~6。魔术师读出排列，就知道要往前数几步。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="g-card">
+          <h3>六种排列对照表</h3>
+          <p style="margin-bottom:14px">把剩下的三张按点数排好，记作 <b>小 / 中 / 大</b>（点数相同按 ♠ ♥ ♦ ♣ 排序），再看它们实际出现的顺序：</p>
+          <div class="perm-list" id="permList"></div>
+          <p style="margin-top:14px">点数遇到 K 之后从 A 继续。例：起点 12（Q），数 4 步 → 13(K)、1(A)、2、3，答案是 3。</p>
+        </div>
+
+        <div class="g-card">
+          <h3>为什么一定成立</h3>
+          <ul>
+            <li><b>花色</b>：5 张牌、4 种花色 → 至少两张同花色，这一步永远成立。</li>
+            <li><b>距离</b>：13 张牌排成环，两张牌之间的两条弧加起来是 13，所以总有一条 ≤ 6。方向一旦确定，藏哪张就唯一了。</li>
+            <li><b>数字</b>：3 张牌的排列恰好 6 种，覆盖 1~6 全部偏移，不多不少。</li>
+            <li>所以这三层信息互不冲突、也不重复，任何 5 张牌都有一套合法的编码——命中率 100%，不是概率，是构造。</li>
+          </ul>
+        </div>
+
+        <div class="g-card example">
+          <h3>跟着走一遍</h3>
+          <div id="guideExample"></div>
+          <div><button class="btn tiny ghost" id="gNew">换一组例子</button></div>
+        </div>
+
+        <div class="g-card">
+          <h3>容易踩的坑</h3>
+          <ul>
+            <li>“同花色”是<b>两张牌同花色</b>，不是同点数；先找花色再算距离。</li>
+            <li>距离方向是<b>从亮出的那张往后数</b>，不是从藏牌往前数。</li>
+            <li>如果两张同花色的牌相差 7 步（另一个方向就是 6 步），必须反着藏，否则 1~6 装不下。</li>
+            <li>三张牌排序时点数可能相同（不同花色），要约定一个花色次序做 tie-break，否则魔术师会读错。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    五牌密码 · 基于 Fitch Cheney 的经典五张牌魔术（1930s）。全部逻辑在本地运行，不联网、不上传；战绩只写在这台浏览器的 <code style="font-family:ui-monospace,Consolas,monospace;color:#a99ac0">localStorage</code> 里，换设备或换浏览器就是一份全新的记录。
+  </footer>
+</div>
+
+<!-- 对照表抽屉 -->
+<aside class="sheet" id="sheet" aria-hidden="true">
+  <div class="sheet-head">
+    <h3>口袋对照表</h3>
+    <button class="btn tiny ghost" id="sheetClose">收起</button>
+  </div>
+  <p class="sheet-note"><b>第一张</b> → 花色 + 起点。<br /><b>后三张的顺序</b> → 数字 1~6。</p>
+  <div class="perm-list" id="sheetPerms"></div>
+  <p class="sheet-note">A = 1 … K = 13，围成一圈；超过 13 就从 A 继续。</p>
+</aside>
+<div class="scrim" id="scrim"></div>
+
+<!-- ===================== 规则引擎 ===================== -->
+<script id="engine-src">
+(function (global) {
+  'use strict';
+
+  var SUITS = ['♠', '♥', '♦', '♣'];
+  var SUIT_NAMES = ['黑桃', '红桃', '方块', '梅花'];
+  var RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+  var LABELS = ['小', '中', '大'];
+  /* PERMS[d-1]：把「小中大」排成第 d 种顺序 */
+  var PERMS = ['012', '021', '102', '120', '201', '210'];
+
+  function makeCard(r, s) { return { r: r, s: s }; }
+  function cardName(c) { return RANKS[c.r] + SUITS[c.s]; }
+  function cardFull(c) { return SUIT_NAMES[c.s] + RANKS[c.r]; }
+  function rankValue(c) { return c.r + 1; }
+  function cmp(a, b) { return (a.r - b.r) || (a.s - b.s); }
+  function eq(a, b) { return !!a && !!b && a.r === b.r && a.s === b.s; }
+
+  function makeDeck() {
+    var d = [];
+    for (var s = 0; s < 4; s++) for (var r = 0; r < 13; r++) d.push(makeCard(r, s));
+    return d;
+  }
+
+  /* 洗牌并抽 n 张，返回按点数排好序的手牌 */
+  function draw(n, rng) {
+    rng = rng || Math.random;
+    var d = makeDeck();
+    for (var i = d.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1));
+      var t = d[i]; d[i] = d[j]; d[j] = t;
+    }
+    return d.slice(0, n).sort(cmp);
+  }
+
+  /* 所有合法的藏牌方案 */
+  function options(hand) {
+    var out = [];
+    for (var i = 0; i < hand.length; i++) {
+      for (var k = 0; k < hand.length; k++) {
+        if (i === k) continue;
+        if (hand[i].s !== hand[k].s) continue;
+        var d = (hand[i].r - hand[k].r + 13) % 13;
+        if (d >= 1 && d <= 6) out.push({ hidden: hand[i], base: hand[k], d: d });
+      }
+    }
+    return out;
+  }
+
+  function build(hand, opt) {
+    var three = hand.filter(function (c) { return !eq(c, opt.hidden) && !eq(c, opt.base); }).sort(cmp);
+    var perm = PERMS[opt.d - 1];
+    var shown = [opt.base].concat(perm.split('').map(function (k) { return three[+k]; }));
+    return { shown: shown, hidden: opt.hidden, base: opt.base, d: opt.d, three: three, perm: perm };
+  }
+
+  function encode(hand, rng) {
+    var opts = options(hand);
+    if (!opts.length) throw new Error('这幅手牌无法编码');
+    var o = opts[Math.floor((rng || Math.random)() * opts.length)];
+    return build(hand, o);
+  }
+
+  function encodeAll(hand) {
+    return options(hand).map(function (o) { return build(hand, o); });
+  }
+
+  /* 从亮出的 4 张牌里读回第 5 张 */
+  function decode(shown) {
+    if (!shown || shown.length !== 4) throw new Error('需要 4 张亮出的牌');
+    var base = shown[0];
+    var three = shown.slice(1);
+    var sorted = three.slice().sort(cmp);
+    var labels = three.map(function (c) {
+      return LABELS[sorted.findIndex(function (x) { return eq(x, c); })];
+    });
+    var perm = labels.map(function (l) { return String(LABELS.indexOf(l)); }).join('');
+    var d = PERMS.indexOf(perm) + 1;
+
+    var bv = base.r + 1;
+    var raw = bv + d;
+    var hv = ((bv - 1 + d) % 13) + 1;
+    var hidden = makeCard(hv - 1, base.s);
+    var walk = [];
+    for (var k = 0; k <= d; k++) walk.push(((bv - 1 + k) % 13) + 1);
+
+    return {
+      base: base, three: three, sorted: sorted,
+      labels: labels, perm: perm, d: d,
+      bv: bv, raw: raw, hv: hv, walk: walk,
+      hidden: hidden, hiddenName: cardName(hidden),
+      baseName: cardName(base),
+      suit: base.s, suitName: SUIT_NAMES[base.s],
+      math: raw <= 13
+        ? (bv + ' + ' + d + ' = ' + hv)
+        : (bv + ' + ' + d + ' = ' + raw + '，绕过 K 后从 A 继续：' + raw + ' − 13 = ' + hv)
+    };
+  }
+
+  /* 判定助手的摆法能否被读懂 */
+  function diagnose(hidden, shown) {
+    var dec = decode(shown);
+    if (eq(dec.hidden, hidden)) return { ok: true, decode: dec, message: '', need: dec.d };
+
+    var need = shown[0].s === hidden.s ? (hidden.r - shown[0].r + 13) % 13 : null;
+    var msg;
+    if (shown[0].s !== hidden.s) {
+      msg = '第一张是 ' + cardName(shown[0]) + '（' + SUIT_NAMES[shown[0].s] + '），藏牌却是' + SUIT_NAMES[hidden.s] +
+        '。花色信号从第一张读，所以它必须和藏牌同花色。';
+    } else if (need > 6) {
+      msg = '花色对了，但从 ' + cardName(shown[0]) + ' 到 ' + cardName(hidden) + ' 要走 ' + need +
+        ' 步，超过 6 步就编不进三个排列。这一对应该反过来：藏 ' + cardName(shown[0]) + '，把 ' + cardName(hidden) + ' 放在第一张。';
+    } else {
+      msg = '花色对了，需要数 ' + need + ' 步，但后三张的顺序被读成了 ' + dec.d + ' 步。';
+    }
+    if (shown.some(function (c) { return eq(c, dec.hidden); })) {
+      msg += '另外，我读到的 ' + cardName(dec.hidden) + ' 已经在你亮出的四张里了——这本身就说明顺序错位。';
+    }
+    return { ok: false, decode: dec, message: msg, need: need };
+  }
+
+  function permTable() {
+    return PERMS.map(function (p, i) {
+      return { d: i + 1, perm: p, labels: p.split('').map(function (k) { return LABELS[+k]; }) };
+    });
+  }
+
+  global.FiveCardEngine = {
+    SUITS: SUITS, SUIT_NAMES: SUIT_NAMES, RANKS: RANKS, LABELS: LABELS, PERMS: PERMS,
+    makeCard: makeCard, cardName: cardName, cardFull: cardFull, rankValue: rankValue,
+    cmp: cmp, eq: eq, makeDeck: makeDeck, draw: draw,
+    options: options, encode: encode, encodeAll: encodeAll, decode: decode, diagnose: diagnose,
+    permTable: permTable
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
+<!-- ===================== 界面逻辑 ===================== -->
+<script>
+(function () {
+  'use strict';
+  var E = window.FiveCardEngine;
+
+  /* ---------- 工具 ---------- */
+  var $ = function (sel, root) { return (root || document).querySelector(sel); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  var isRed = function (c) { return c.s === 1 || c.s === 2; };
+
+  /* ---------- 数据 ---------- */
+  var LS_KEY = 'five-card-code.v1';
+  var stats = {
+    magician: { rounds: 0, correct: 0, streak: 0, best: 0 },
+    assistant: { rounds: 0, correct: 0 }
+  };
+  var beginner = true;
+  var MG = null;              /* 魔术师模式的局 */
+  var AG = null;              /* 助手模式的局 */
+  var current = 'home';
+  var MAX_STREAK = 0;
+
+  function loadPrefs() {
+    try {
+      var raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
+      var o = JSON.parse(raw);
+      if (o && typeof o.beginner === 'boolean') beginner = o.beginner;
+      if (o && o.stats) {
+        ['magician', 'assistant'].forEach(function (k) {
+          if (!o.stats[k]) return;
+          for (var key in stats[k]) {
+            if (typeof o.stats[k][key] === 'number' && isFinite(o.stats[k][key])) stats[k][key] = o.stats[k][key];
+          }
+        });
+      }
+    } catch (e) { /* 隐私模式 / 禁用存储时静默降级 */ }
+  }
+  function savePrefs() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ beginner: beginner, stats: stats })); } catch (e) {}
+  }
+
+  /* ---------- 纸牌渲染 ---------- */
+  function cornerHTML(c) {
+    var t = c.r === 9 ? ' class="ten"' : '';   /* 10 号牌的字面更宽，缩小一点 */
+    return '<span class="c tl"><b' + t + '>' + E.RANKS[c.r] + '</b><i>' + E.SUITS[c.s] + '</i></span>' +
+           '<span class="pip">' + E.SUITS[c.s] + '</span>' +
+           '<span class="c br"><b' + t + '>' + E.RANKS[c.r] + '</b><i>' + E.SUITS[c.s] + '</i></span>';
+  }
+  function cardHTML(c, opt) {
+    opt = opt || {};
+    var cls = 'card' + (isRed(c) ? ' red' : '') + (opt.cls ? ' ' + opt.cls : '');
+    var attrs = opt.attrs ? ' ' + opt.attrs : '';
+    var badge = opt.badge ? '<span class="badge' + (opt.badgeGreen ? ' green' : '') + '">' + opt.badge + '</span>' : '';
+    return '<div class="' + cls + '"' + attrs + '>' + cornerHTML(c) + badge + '</div>';
+  }
+  function backHTML(opt) {
+    opt = opt || {};
+    var cls = 'card back-face' + (opt.cls ? ' ' + opt.cls : '');
+    var attrs = opt.attrs ? ' ' + opt.attrs : '';
+    var badge = opt.badge ? '<span class="badge' + (opt.badgeGreen ? ' green' : '') + '">' + opt.badge + '</span>' : '';
+    return '<div class="' + cls + '"' + attrs + '>' + badge + '</div>';
+  }
+  function chip(c) {
+    return '<span class="chip' + (isRed(c) ? ' red' : '') + '">' + E.cardName(c) + '</span>';
+  }
+
+  /* ---------- 震屏 / 撒花 ---------- */
+  var fx = $('#fx'), fxc = fx && fx.getContext ? fx.getContext('2d') : null;
+  var parts = [], fxRunning = false, dpr = Math.min(window.devicePixelRatio || 1, 2);
+  function sizeFx() {
+    if (!fx) return;
+    fx.width = Math.floor(window.innerWidth * dpr);
+    fx.height = Math.floor(window.innerHeight * dpr);
+    fxc.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  if (fx) { sizeFx(); window.addEventListener('resize', sizeFx); }
+  function burst(x, y) {
+    if (!fxc) return;
+    var colors = ['#e9cd91', '#fff3d5', '#d9485f', '#8f7ae0', '#5fd0a0'];
+    for (var i = 0; i < 64; i++) {
+      var a = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 7;
+      parts.push({
+        x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 2.4,
+        g: 0.16, life: 1, size: 2 + Math.random() * 4.5,
+        rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.35,
+        c: colors[i % colors.length]
+      });
+    }
+    if (!fxRunning) { fxRunning = true; requestAnimationFrame(tick); }
+  }
+  function tick() {
+    fxc.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    parts = parts.filter(function (p) { return p.life > 0; });
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.vx *= 0.99; p.life -= 0.011; p.rot += p.vr;
+      fxc.save();
+      fxc.globalAlpha = Math.max(p.life, 0);
+      fxc.translate(p.x, p.y); fxc.rotate(p.rot);
+      fxc.fillStyle = p.c;
+      fxc.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.7);
+      fxc.restore();
+    }
+    if (parts.length) requestAnimationFrame(tick);
+    else { fxRunning = false; fxc.clearRect(0, 0, window.innerWidth, window.innerHeight); }
+  }
+
+  /* ---------- 屏幕切换 ---------- */
+  var SCREENS = ['home', 'magician', 'assistant', 'guide'];
+  function show(name) {
+    if (SCREENS.indexOf(name) < 0) name = 'home';
+    current = name;
+    $$('.screen').forEach(function (s) { s.classList.toggle('active', s.id === 'screen-' + name); });
+    $$('.tab').forEach(function (t) { t.classList.toggle('on', t.dataset.screen === name); });
+    if (name === 'magician' && !MG) newMagician(); else if (name === 'magician' && MG) renderMagician();
+    if (name === 'assistant' && !AG) newAssistant(); else if (name === 'assistant' && AG) renderAssistant();
+    if (name === 'guide') renderGuide();
+    if (name === 'home') renderHomeStats();
+    if (('#' + name) !== location.hash) {
+      try { history.replaceState(null, '', '#' + name); } catch (e) { location.hash = name; }
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ---------- 首页统计 ---------- */
+  function renderHomeStats() {
+    var m = stats.magician, a = stats.assistant;
+    var rate = m.rounds ? Math.round(m.correct / m.rounds * 100) : 0;
+    $('#homeStats').innerHTML =
+      '<span>魔术师命中 <b>' + m.correct + ' / ' + m.rounds + '</b>' + (m.rounds ? '（' + rate + '%）' : '') + '</span>' +
+      '<span class="dot">·</span>' +
+      '<span>当前连胜 <b>' + m.streak + '</b></span>' +
+      '<span class="dot">·</span>' +
+      '<span>最佳连胜 <b>' + m.best + '</b></span>' +
+      '<span class="dot">·</span>' +
+      '<span>助手局 <b>' + a.correct + ' / ' + a.rounds + '</b></span>' +
+      '<span class="stat-tools">' +
+        '<span class="stat-note">仅存于本机浏览器</span>' +
+        '<button class="btn tiny ghost" type="button" data-clear="stats" title="清除这台设备上保存的战绩">清除战绩</button>' +
+      '</span>';
+  }
+
+  /* ---------- 清除本机战绩（两步确认） ---------- */
+  var clearTimer = null;
+  function disarmClear() {
+    if (clearTimer) { clearTimeout(clearTimer); clearTimer = null; }
+    var b = $('#homeStats [data-clear]');
+    if (b && b.dataset.armed) {
+      delete b.dataset.armed;
+      b.textContent = '清除战绩';
+      b.classList.remove('danger');
+    }
+  }
+  function armClear(btn) {
+    if (clearTimer) clearTimeout(clearTimer);
+    btn.dataset.armed = '1';
+    btn.textContent = '再点一次确认';
+    btn.classList.add('danger');
+    clearTimer = setTimeout(disarmClear, 4000);
+  }
+  function clearStats() {
+    disarmClear();
+    var m = stats.magician, a = stats.assistant;
+    m.rounds = 0; m.correct = 0; m.streak = 0; m.best = 0;
+    a.rounds = 0; a.correct = 0;
+    MAX_STREAK = 0;
+    if (MG) MG.roundNo = 1;
+    savePrefs();
+    renderHomeStats();
+    if (current === 'magician') renderMagician();
+    if (current === 'assistant') renderAssistant();
+    var b = $('#homeStats [data-clear]');
+    if (b) {
+      b.textContent = '已清除';
+      b.disabled = true;
+      setTimeout(function () { renderHomeStats(); }, 1500);
+    }
+  }
+
+  /* ======================================================================
+     模式一：当魔术师
+     ====================================================================== */
+  function newMagician() {
+    var hand = E.draw(5);
+    var enc = E.encode(hand);
+    MG = {
+      hand: hand,
+      shown: enc.shown,
+      hidden: enc.hidden,
+      guess: { r: null, s: null },
+      revealed: false,
+      ok: null,
+      roundNo: stats.magician.rounds + 1,
+      t0: (window.performance && performance.now) ? performance.now() : Date.now(),
+      elapsed: 0
+    };
+    renderMagician();
+  }
+
+  function renderMagician() {
+    if (!MG) return;
+    var m = stats.magician;
+
+    $('#mScore').innerHTML =
+      '第 <b>' + MG.roundNo + '</b> 局 <span class="dot">·</span> 连胜 <b>' + m.streak + '</b>' +
+      ' <span class="dot">·</span> 最佳 <b>' + m.best + '</b> <span class="dot">·</span> 命中 <b>' +
+      m.correct + '/' + m.rounds + '</b>';
+
+    /* 亮出的四张 */
+    $('#mShown').innerHTML = MG.shown.map(function (c, i) {
+      return cardHTML(c, {
+        cls: 'deal' + (i === 0 && beginner && !MG.revealed ? ' lead' : ''),
+        badge: beginner ? (i + 1) : '',
+        attrs: 'style="animation-delay:' + (i * 70) + 'ms"'
+      });
+    }).join('');
+
+    /* 提示行 */
+    var legend = $('#mLegend');
+    if (MG.revealed) {
+      legend.innerHTML = '';
+    } else if (beginner) {
+      legend.innerHTML = '<em>① 决定花色（也是起点）</em>　<em>②③④</em> 的大小顺序决定数字 1~6';
+    } else {
+      legend.innerHTML = '四张牌的位置和顺序都有含义 —— 需要提示就打开「新手提示」。';
+    }
+
+    /* 扣着的牌 */
+    var flip = $('#mFlip');
+    if (MG.revealed) {
+      if (!MG.flipped) {
+        flip.classList.remove('on');
+        flip.innerHTML =
+          '<div class="inner">' +
+            '<div class="side back">' + backHTML() + '</div>' +
+            '<div class="side front">' + cardHTML(MG.hidden) + '</div>' +
+          '</div>';
+        void flip.offsetWidth;            /* 强制回流，让翻牌动画从背面开始 */
+        flip.classList.add('on');
+        MG.flipped = true;
+      } else if (!flip.classList.contains('on')) {
+        flip.classList.add('on');
+      }
+    } else {
+      MG.flipped = false;
+      flip.classList.remove('on');
+      flip.innerHTML = '<div class="inner"><div class="side back">' + backHTML() + '</div><div class="side front"></div></div>';
+    }
+
+    renderPickers();
+    renderMagicianFeedback();
+  }
+
+  function renderPickers() {
+    var g = MG.guess;
+    $('#mSuits').innerHTML = E.SUITS.map(function (s, i) {
+      var red = (i === 1 || i === 2);
+      var on = g && g.s === i;
+      return '<button class="pick' + (red ? ' red-pick' : '') + (on ? ' on' : '') + '" data-suit="' + i + '"' +
+        (MG.revealed ? ' disabled' : '') + '>' + s + '</button>';
+    }).join('');
+
+    $('#mRanks').innerHTML = E.RANKS.map(function (r, i) {
+      var on = g && g.r === i;
+      return '<button class="pick rk' + (on ? ' on' : '') + '" data-rank="' + i + '"' +
+        (MG.revealed ? ' disabled' : '') + '>' + r + '</button>';
+    }).join('');
+
+    var now = $('#mGuessNow');
+    if (g && g.r !== null && g.s !== null) {
+      now.innerHTML = '你猜：<b>' + E.RANKS[g.r] + E.SUITS[g.s] + '</b>';
+    } else if (g && (g.r !== null || g.s !== null)) {
+      now.innerHTML = '再选' + (g.r === null ? '点数' : '花色') + '……';
+    } else {
+      now.innerHTML = '还没选牌';
+    }
+
+    var ready = g && g.r !== null && g.s !== null;
+    var btn = $('#mSubmit');
+    if (MG.revealed) {
+      btn.disabled = false;
+      btn.textContent = '下一局';
+    } else {
+      btn.disabled = !ready;
+      btn.textContent = '揭晓答案';
+    }
+  }
+
+  function renderMagicianFeedback() {
+    var box = $('#mFeedback');
+    if (!MG.revealed) {
+      box.innerHTML = beginner
+        ? '<div class="hintline">口诀：<em>第一张报花色，后三张报步数</em>。先看第一张的花色，再把后三张按大小排一遍，读出差了几步。</div>'
+        : '';
+      return;
+    }
+    var a = E.decode(MG.shown);
+    var ok = MG.ok;
+    var html = '<div class="verdict ' + (ok ? 'ok' : 'bad') + '">' +
+      (ok ? '✓ 读心成功，就是 ' : '✗ 差一点，正确答案是 ') + chip(MG.hidden) + '</div>';
+
+    html += '<div class="explain"><ol>' +
+      '<li>第一张 ' + chip(a.base) + ' 是' + a.suitName + '，它同时是计数的起点。</li>' +
+      '<li>后三张按点数排成 小/中/大，实际顺序是 <b>' + a.labels.join(' · ') + '</b>，对应数字 <b>' + a.d + '</b>。</li>' +
+      '<li>从 ' + E.RANKS[a.bv - 1] + ' 往后数 ' + a.d + ' 步：' +
+        '<span class="chip gold">' + a.walk.map(function (v) { return E.RANKS[v - 1]; }).join(' → ') + '</span>' +
+        '，落到 <b>' + a.hiddenName + '</b>。</li>' +
+      '</ol></div>';
+
+    if (!ok) {
+      var gs = MG.guess.r !== null && MG.guess.s !== null ? (E.RANKS[MG.guess.r] + E.SUITS[MG.guess.s]) : '（未选）';
+      html += '<div class="hintline">你猜的是 <b>' + gs + '</b>，用时 ' + MG.elapsed.toFixed(1) + ' 秒。再看看第 2 步的排列读得对不对。</div>';
+    } else {
+      html += '<div class="hintline">用时 ' + MG.elapsed.toFixed(1) + ' 秒' +
+        (stats.magician.streak > 1 ? '，已经连中 ' + stats.magician.streak + ' 局 🔥' : '') + '</div>';
+    }
+    box.innerHTML = html;
+  }
+
+  function onPickSuit(i) {
+    if (!MG || MG.revealed) return;
+    MG.guess.s = MG.guess.s === i ? null : i;
+    renderMagician();
+  }
+  function onPickRank(i) {
+    if (!MG || MG.revealed) return;
+    MG.guess.r = MG.guess.r === i ? null : i;
+    renderMagician();
+  }
+
+  function submitMagician() {
+    if (!MG) return;
+    if (MG.revealed) { newMagician(); return; }
+    var g = MG.guess;
+    if (g.r === null || g.s === null) return;
+
+    MG.revealed = true;
+    MG.ok = (g.r === MG.hidden.r && g.s === MG.hidden.s);
+    var t1 = (window.performance && performance.now) ? performance.now() : Date.now();
+    MG.elapsed = Math.max(0, (t1 - MG.t0) / 1000);
+
+    var m = stats.magician;
+    m.rounds++;
+    if (MG.ok) {
+      m.correct++; m.streak++;
+      MAX_STREAK = Math.max(MAX_STREAK, m.streak);
+      m.best = Math.max(m.best, m.streak);
+    } else {
+      m.streak = 0;
+    }
+    savePrefs();
+    renderMagician();
+
+    if (MG.ok) {
+      var el = $('#mFlip').getBoundingClientRect();
+      burst(el.left + el.width / 2, el.top + el.height / 2);
+    }
+  }
+
+  /* ======================================================================
+     模式二：当助手
+     ====================================================================== */
+  function newAssistant() {
+    AG = {
+      hand: E.draw(5),
+      hidden: null,
+      order: [],
+      done: false,
+      result: null,
+      demo: false
+    };
+    renderAssistant();
+  }
+
+  function renderAssistant() {
+    if (!AG) return;
+
+    /* 手牌 */
+    $('#aHand').innerHTML = AG.hand.map(function (c, i) {
+      var hidden = AG.hidden && E.eq(c, AG.hidden);
+      var placed = AG.order.some(function (x) { return E.eq(x, c); });
+      var failed = AG.done && AG.result && !AG.result.ok;
+      if (hidden && failed) {
+        /* 失败时把真正的藏牌亮出来，方便对照 */
+        return cardHTML(c, { cls: 'deal true', badge: '藏', attrs: 'data-idx="' + i + '"' });
+      }
+      if (hidden) {
+        return backHTML({ cls: 'deal', badge: '藏', attrs: 'data-idx="' + i + '" style="cursor:pointer"' });
+      }
+      return cardHTML(c, {
+        cls: 'deal clickable' + (placed ? ' placed' : ''),
+        badge: placed ? String(AG.order.indexOf(c) + 1) : '',
+        attrs: 'data-idx="' + i + '" style="animation-delay:' + (i * 60) + 'ms"'
+      });
+    }).join('');
+
+    /* 四个位置 */
+    var slots = '';
+    for (var i = 0; i < 4; i++) {
+      var c = AG.order[i];
+      if (c) {
+        slots += cardHTML(c, {
+          cls: 'clickable',
+          badge: String(i + 1),
+          attrs: 'data-slot="' + i + '"'
+        });
+      } else {
+        slots += '<div class="slot" data-slot="-1">' + (i + 1) + '</div>';
+      }
+    }
+    $('#aSlots').innerHTML = slots;
+
+    /* 状态与按钮 */
+    var state = $('#aState');
+    var confirm = $('#aConfirm');
+    if (AG.done) {
+      state.textContent = AG.result && AG.result.ok ? '读心成功' : '读心失败';
+    } else if (!AG.hidden) {
+      state.textContent = '等你藏牌';
+    } else if (AG.order.length < 4) {
+      state.textContent = '摆牌中 ' + AG.order.length + '/4';
+    } else {
+      state.textContent = '可以揭晓了';
+    }
+    confirm.disabled = AG.done || !AG.hidden || AG.order.length !== 4;
+    confirm.textContent = AG.done ? '再试一次' : '让他读读看';
+
+    renderBubble();
+  }
+
+  function renderBubble() {
+    var bubble = $('#aBubble');
+    var fb = $('#aFeedback');
+
+    if (!AG.done) {
+      bubble.innerHTML = '<span class="quote">MAGICIAN</span>' +
+        (AG.hidden
+          ? '你已经藏好了 <b>' + chip(AG.hidden) + '</b>（点它可以换一张）。把剩下的四张按顺序摆好，我就开始读。'
+          : '任意抽到的五张牌，你挑一张藏起来，再把其余四张按顺序摆给我。') +
+        (beginner && AG.hidden && AG.order.length === 4 ? selfCheckHTML() : '');
+      fb.innerHTML = '';
+      return;
+    }
+
+    var dec = AG.result.decode;
+    var ok = AG.result.ok;
+    bubble.innerHTML = '<span class="quote">MAGICIAN</span>' +
+      '第一张 ' + chip(dec.base) + ' 是' + dec.suitName + '；' +
+      '后三张是 <b>' + dec.labels.join(' · ') + '</b>，读作 <b>' + dec.d + '</b>；' +
+      '从 ' + E.RANKS[dec.bv - 1] + ' 往 ' + dec.suitName + ' 数 ' + dec.d + ' 步 → 我猜 ' + chip(dec.hidden) + '。';
+
+    var html = '<div class="verdict ' + (ok ? 'ok' : 'bad') + '">' +
+      (ok ? '✓ 读心成功，你的密码很干净' : '✗ 读心失败：我读成了 ' + E.cardName(dec.hidden)) + '</div>';
+
+    if (ok) {
+      html += '<div class="hintline">这一局证明了：只要遵守三条规则，四张牌足够传递第五张的全部信息。</div>';
+    } else {
+      html += '<div class="explain">' + AG.result.message + '</div>';
+      if (beginner) html += '<div class="hintline">点「看示范」可以直接看到一种合法摆法。</div>';
+    }
+    fb.innerHTML = html;
+  }
+
+  function selfCheckHTML() {
+    var base = AG.order[0];
+    var out = [];
+    if (base.s !== AG.hidden.s) {
+      out.push('<span class="no">✗ 花色</span>：第一张是' + E.SUIT_NAMES[base.s] + '，藏牌是' + E.SUIT_NAMES[AG.hidden.s] + '。');
+    } else {
+      out.push('<span class="yes">✓ 花色</span>：' + E.SUIT_NAMES[base.s] + '。');
+      var need = (AG.hidden.r - base.r + 13) % 13;
+      var dec = E.decode(AG.order);
+      if (need > 6) {
+        out.push('<span class="no">✗ 步数</span>：需要 ' + need + ' 步，超过 6，得反着藏。');
+      } else if (dec.d !== need) {
+        out.push('<span class="no">✗ 步数</span>：需要 ' + need + '，现在编出来的是 ' + dec.d + '。');
+      } else {
+        out.push('<span class="yes">✓ 步数</span>：正好 ' + need + ' 步。');
+      }
+    }
+    return '<div class="selfcheck">' + out.join('<br />') + '</div>';
+  }
+
+  function onHandClick(i) {
+    if (!AG || AG.done) return;
+    var c = AG.hand[i];
+
+    if (AG.hidden && E.eq(c, AG.hidden)) {   /* 取消藏牌 */
+      AG.hidden = null; AG.order = []; AG.demo = false;
+      renderAssistant(); return;
+    }
+    if (!AG.hidden) {                         /* 第一步：选藏牌 */
+      AG.hidden = c; AG.order = []; AG.demo = false;
+      renderAssistant(); return;
+    }
+    if (AG.order.length >= 4) return;         /* 已摆满 */
+    if (AG.order.some(function (x) { return E.eq(x, c); })) return;
+    AG.order.push(c);
+    AG.demo = false;
+    renderAssistant();
+  }
+
+  function onSlotClick(i) {
+    if (!AG || AG.done || i < 0) return;
+    AG.order.splice(i, 1);
+    AG.demo = false;
+    renderAssistant();
+  }
+
+  function confirmAssistant() {
+    if (!AG) return;
+    if (AG.done) { AG.done = false; AG.result = null; AG.order = []; AG.hidden = null; renderAssistant(); return; }
+    if (!AG.hidden || AG.order.length !== 4) return;
+
+    var res = E.diagnose(AG.hidden, AG.order);
+    AG.result = res;
+    AG.done = true;
+    stats.assistant.rounds++;
+    if (res.ok) stats.assistant.correct++;
+    savePrefs();
+    renderAssistant();
+    if (res.ok) {
+      var el = $('#aBubble').getBoundingClientRect();
+      burst(el.left + el.width / 2, el.top + el.height / 2);
+    }
+  }
+
+  /* ======================================================================
+     解密手册
+     ====================================================================== */
+  function permRowHTML(row) {
+    var tags = row.labels.map(function (l) { return '<span class="tag">' + l + '</span>'; }).join('');
+    return '<div class="perm-row"><span class="num">' + row.d + '</span>' + tags +
+      '<span class="arrow">数 <b>' + row.d + '</b> 步</span></div>';
+  }
+
+  function renderGuide() {
+    var table = E.permTable();
+    $('#permList').innerHTML = table.map(permRowHTML).join('');
+    $('#sheetPerms').innerHTML = table.map(permRowHTML).join('');
+    if (!$('#guideExample').dataset.ready) {
+      $('#guideExample').dataset.ready = '1';
+      renderExample();
+    }
+  }
+
+  function renderExample() {
+    var hand = E.draw(5);
+    var enc = E.encode(hand);
+    var a = E.decode(enc.shown);
+    var html = '<div class="hintline" style="margin-top:0">抽到的五张：' +
+      hand.map(function (c) { return chip(c); }).join('') + '</div>';
+
+    var sameSuit = hand.filter(function (c) { return c.s === enc.base.s; });
+    html += '<div class="timeline" style="margin-top:14px">' +
+      '<div class="step">同花色的是 ' + sameSuit.map(function (c) { return chip(c); }).join(' 和 ') +
+        '。从 ' + chip(enc.base) + ' 往后走到 ' + chip(enc.hidden) + ' 一共 <b>' + enc.d + '</b> 步（≤ 6，方向正确），所以藏 ' + chip(enc.hidden) + '，把 ' + chip(enc.base) + ' 放在第一位。</div>' +
+      '<div class="step">剩下三张按大小排：' + a.sorted.map(function (c) { return chip(c); }).join(' ') +
+        '，记作 小 / 中 / 大。要表达 <b>' + a.d + '</b>，对应的排列是 <b>' + a.labels.join(' · ') + '</b>。</div>' +
+      '<div class="step">于是亮出的顺序是：<b>' + enc.shown.map(function (c) { return E.cardName(c); }).join(' → ') + '</b>。</div>' +
+      '<div class="step">魔术师读牌：第一张 ' + chip(a.base) + ' → ' + a.suitName + '、起点 ' + a.bv +
+        '；后三张 ' + a.labels.join(' · ') + ' → ' + a.d + ' 步；' + a.math + ' → 答案是 <b>' + chip(a.hidden) + '</b>。</div>' +
+      '</div>';
+
+    html += '<div class="row" style="margin-top:14px;--cw:64px;--ch:92px">' +
+      enc.shown.map(function (c, i) { return cardHTML(c, { badge: String(i + 1) }); }).join('') +
+      '<div class="flip" style="--cw:64px;--ch:92px;margin-left:6px"><div class="inner"><div class="side back">' +
+        backHTML({ badge: '?' }) + '</div></div></div>' +
+      '</div>';
+
+    $('#guideExample').innerHTML = html;
+  }
+
+  /* ---------- 事件绑定 ---------- */
+  function bind() {
+    /* 导航 */
+    $('#tabs').addEventListener('click', function (e) {
+      var t = e.target.closest('.tab');
+      if (t) show(t.dataset.screen);
+    });
+    document.addEventListener('click', function (e) {
+      var go = e.target.closest('[data-go]');
+      if (go) show(go.dataset.go);
+    });
+    window.addEventListener('hashchange', function () {
+      var name = location.hash.replace('#', '');
+      if (name && name !== current) show(name);
+    });
+
+    /* 清除本机战绩：第一次点armed，第二次点执行 */
+    $('#homeStats').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-clear]');
+      if (!b || b.disabled) return;
+      if (b.dataset.armed) clearStats();
+      else armClear(b);
+    });
+
+    /* 魔法师模式 */
+    $('#mSuits').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-suit]'); if (b) onPickSuit(+b.dataset.suit);
+    });
+    $('#mRanks').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-rank]'); if (b) onPickRank(+b.dataset.rank);
+    });
+    $('#mSubmit').addEventListener('click', submitMagician);
+    $('#mNew').addEventListener('click', newMagician);
+
+    var bt = $('#beginnerToggle');
+    bt.checked = beginner;
+    bt.addEventListener('change', function () {
+      beginner = bt.checked; savePrefs();
+      if (current === 'magician') renderMagician();
+      if (current === 'assistant') renderAssistant();
+    });
+
+    /* 助手模式 */
+    $('#aHand').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-idx]'); if (b) onHandClick(+b.dataset.idx);
+    });
+    $('#aSlots').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-slot]'); if (b) onSlotClick(+b.dataset.slot);
+    });
+    $('#aUndo').addEventListener('click', function () {
+      if (!AG || AG.done) return;
+      if (AG.order.length) AG.order.pop();
+      else AG.hidden = null;
+      AG.demo = false;
+      renderAssistant();
+    });
+    $('#aReset').addEventListener('click', function () {
+      if (!AG) return;
+      AG.hidden = null; AG.order = []; AG.done = false; AG.result = null; AG.demo = false;
+      renderAssistant();
+    });
+    $('#aDemo').addEventListener('click', function () {
+      if (!AG) return;
+      var enc = E.encode(AG.hand);
+      AG.hidden = enc.hidden;
+      AG.order = enc.shown.slice();
+      AG.done = false; AG.result = null; AG.demo = true;
+      renderAssistant();
+      $('#aFeedback').innerHTML = '<div class="hintline">这是其中一种合法摆法：第一张 ' +
+        chip(enc.base) + ' 定' + E.SUIT_NAMES[enc.base.s] + '与起点，后三张排成 ' + E.decode(enc.shown).labels.join(' · ') +
+        ' 表示 ' + enc.d + ' 步。点「让他读读看」验证一下。</div>';
+    });
+    $('#aNew').addEventListener('click', newAssistant);
+    $('#aConfirm').addEventListener('click', confirmAssistant);
+
+    /* 手册 */
+    $('#gNew').addEventListener('click', renderExample);
+
+    /* 抽屉 */
+    $('#btnSheet').addEventListener('click', function () { document.body.classList.add('sheet-open'); });
+    $('#sheetClose').addEventListener('click', function () { document.body.classList.remove('sheet-open'); });
+    $('#scrim').addEventListener('click', function () { document.body.classList.remove('sheet-open'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') document.body.classList.remove('sheet-open');
+    });
+  }
+
+  /* ---------- 启动 ---------- */
+  loadPrefs();
+  bind();
+  renderGuide();
+  renderHomeStats();
+  $('#beginnerToggle').checked = beginner;
+
+  var initial = location.hash.replace('#', '');
+  show(SCREENS.indexOf(initial) >= 0 ? initial : 'home');
+})();
+</script>
+</body>
+</html>
